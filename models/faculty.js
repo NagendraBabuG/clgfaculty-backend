@@ -10,6 +10,10 @@ const facultySchema = new Schema({
     email: {
         type: String, unique: true, required: true
     },
+    
+    password:{
+        type: String, required: true
+    },
     contact: {
         type: String, default: null
     },
@@ -40,8 +44,10 @@ const facultySchema = new Schema({
     },
     Year : {
         type : String, default : null
+    },
+    resetLink:{
+        type : String, default: ''
     }
-
 
 }, { timestamps: true })
 
