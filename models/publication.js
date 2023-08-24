@@ -10,7 +10,7 @@ const publicationSchema = new Schema({
         type: String, required : true
     },
     date : {
-        type : String, required : true
+        type : String, required : true, default : null
     }
 
 }, { timestamps: true })

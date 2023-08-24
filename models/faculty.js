@@ -10,9 +10,8 @@ const facultySchema = new Schema({
     email: {
         type: String, unique: true, required: true
     },
-    
-    password:{
-        type: String, required: true
+    image : {
+        type : Buffer, contentType : String, required: false
     },
     contact: {
         type: String, default: null
@@ -24,6 +23,7 @@ const facultySchema = new Schema({
     Organization: {
         type: String, default:null
     },
+    uid: { type: String, required: true, unique: true },
     Publications : [{type: mongoose.Schema.Types.ObjectId,unique : true, default:[]}],
 
     Education : [{type: mongoose.Schema.Types.ObjectId,unique : true, default:[]}],
@@ -32,9 +32,11 @@ const facultySchema = new Schema({
     
     // researchScholars : [{type: mongoose.Schema.Types.ObjectId,unique : true, default:[]}],
     
-    AreasOfInterest : [
-        {type : String, default: null}
-    ],
+    AreasOfInterest : {type : String, default: null},
+    image: {
+        data: Buffer, // Store image data as Buffer
+        contentType: String // Store image content type
+    },
     coursesTaught : [{
         type : String, default : null
     }],
@@ -44,9 +46,6 @@ const facultySchema = new Schema({
     },
     Year : {
         type : String, default : null
-    },
-    resetLink:{
-        type : String, default: ''
     }
 
 }, { timestamps: true })

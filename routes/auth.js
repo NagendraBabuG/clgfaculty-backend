@@ -1,9 +1,9 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const express = require("express");
+const nodemailer = require("nodemailer");
 const Faculty = require("../models/faculty");
 const router = express.Router();
-const middleware = require("../middleware/validateToken");
 
 router.post("/login", async (req, res) => {
   try {
@@ -34,25 +34,28 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/create", async (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
+    //console.log(name, email, password)
     if (!(name && email && password)) {
       return res
         .status(401)
         .json({ status: "error", error: "missing details" });
     }
     const duplicatefaculty = await Faculty.findOne({ email: email });
+    //console.log(duplicatefaculty)
     if (duplicatefaculty)
       return res
         .status(401)
         .json({ status: "error", error: "email already in use" });
     const hashPassword = await bcrypt.hash(password, 10);
-    const newfaculty = await faculty.create({
+    const newfaculty = await Faculty.create({
       name: name,
       email: email,
       password: hashPassword,
     });
+    console.log(newfaculty);
     if (!newfaculty)
       return res
         .status(401)
@@ -62,6 +65,7 @@ router.post("/create", async (req, res) => {
       process.env.SECRET_KEY,
       { expiresIn: "1h" }
     );
+    //console.log(newfaculty)
 
     return res.status(201).json({ status: "success", accessToken: token });
   } catch (error) {
@@ -69,57 +73,51 @@ router.post("/create", async (req, res) => {
   }
 });
 
-function forgotPassword(req, res) {
+router.get("/forgotPassword", async (req, res) => {
   const email = req.body.email;
-  Faculty.findone({ email }, (err, user) => {
-    if (err || !user) {
-      return res
-        .status(400)
-        .json({ error: "User with this email already exists" });
-    }
+  console.log(email);
+  if (!email) return res.status(400).json({ error: "Enter ur Email Id..." });
+  const user = await Faculty.findOne({ email });
+  console.log(user);
+  if (!user)
+    return res
+      .status(400)
+      .json({ error: "User with given Email doesnt exist..." });
 
-    const token = jwt.sign({ _id: user._id }, process.env.RESET_PASSWORD_KEY, {
-      expiresIn: "15m",
-    });
+  const token = jwt.sign({ _id: user._id }, process.env.RESET_PASSWORD_KEY, {
+    expiresIn: "15m",
+  });
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.GOOGLE_APP_EMAIL,
-        pass: process.env.GOOGLE_APP_PW,
-      },
-    });
-    const data = {
-      from: "noreply@helloworld.com",
-      to: email,
-      subject: "Reset Account Password Link",
-      html: `
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: "helplineiiitdmk@gmail.com",
+      pass: "iiitdmk@123",
+    },
+  });
+  const data = {
+    from: "noreply@helloworld.com",
+    to: email,
+    subject: "Reset Account Password Link",
+    html: `
     <h3>Please click the link below to reset your password </h3>
     <p>${process.env.CLIENT_URL}/resetpassword/${token}</p>`,
-    };
-
-    return Faculty.updateOne({ resetLink: token }, (err, user) => {
-      if (err) {
-        return res.status(400).json({ error: "reset Password error" });
-      } else {
-        transporter.sendMail(data, function (error, body) {
-          if (error) {
-            return res.status(400).json({ error: error.message });
-          }
-          return res
-            .status(200)
-            .json({
-              message: "Email has been sent, please follow the instructions",
-            });
-        });
-      }
+  };
+  const updatedFaculty = await Faculty.updateOne({ resetLink: token });
+  if (!updatedFaculty)
+    return res.status(400).json({ error: "reset Password error" });
+  //transporter.sendMail()
+  transporter.sendMail(data, (error, body) => {
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(200).json({
+      message: "Email has been sent, please follow the instructions",
     });
   });
-}
+});
 
-async function updatePassword(req, res) {
+router.post("/updatePassword", async (req, res) => {
   const { token, password } = req.body;
   if (token) {
     jwt.verify(
@@ -153,6 +151,6 @@ async function updatePassword(req, res) {
   } else {
     return res.status(401).json({ error: "Authentication Error" });
   }
-}
+});
 
 module.exports = router;
